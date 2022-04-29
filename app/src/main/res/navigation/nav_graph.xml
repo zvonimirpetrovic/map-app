@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/startActivityhead">
+
+    <fragment
+        android:id="@+id/map"
+        android:name="com.maps.appmap.MapsActivity"
+        android:label="@string/title_activity_maps"
+        tools:layout="@layout/activity_maps">
+
+        <action
+            android:id="@+id/action_FirstFragment_to_SecondFragment"
+            app:destination="@id/recordsoundactivity" />
+    </fragment>
+    <fragment
+        android:id="@+id/recordsoundactivity"
+        android:name="com.maps.appmap.RecordSoundActivity"
+        android:label="@string/title_activity_sound"
+        tools:layout="@layout/activity_sound_recording">
+
+        <action
+            android:id="@+id/action_SecondFragment_to_FirstFragment"
+            app:destination="@id/map" />
+    </fragment>
+    <fragment
+        android:id="@+id/mapuser"
+        android:name="com.maps.appmap.MapsUserActivity"
+        android:label="@string/title_activity_maps_user"
+        tools:layout="@layout/activity_maps_user">
+
+        <action
+            android:id="@+id/action_SecondFragment_to_FirstFragment"
+            app:destination="@id/map" />
+    </fragment>
+    <fragment
+        android:id="@+id/startActivityhead"
+        android:name="com.maps.appmap.StartActivity"
+        android:label="@string/title_activity_start"
+        tools:layout="@layout/activity_start">
+
+        <action
+            android:id="@+id/action_SecondFragment_to_FirstFragment"
+            app:destination="@id/map" />
+    </fragment>
+</navigation>
