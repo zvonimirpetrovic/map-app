@@ -293,6 +293,8 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
 
     private void deleteRoutesWithNoAudio() {
         SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
+
         db.delete("Routes", "Audio IS NULL", null);
     }
 

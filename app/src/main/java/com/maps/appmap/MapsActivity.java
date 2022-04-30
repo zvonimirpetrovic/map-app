@@ -464,10 +464,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         db.execSQL("INSERT INTO Routes VALUES(NULL, 'admin', '" + save + "', NULL);");
     }
 
-    private void dropDb(){
-        this.deleteDatabase("LCF");
-    }
-
     private String getLastRouteFromDb(){
         String value = null;
         SQLiteDatabase db = openOrCreateDatabase("LCF",MODE_PRIVATE,null);
@@ -566,7 +562,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void deleteRoutesWithNoAudio() {
+
         SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
         db.delete("Routes", "Audio IS NULL", null);
     }
 }

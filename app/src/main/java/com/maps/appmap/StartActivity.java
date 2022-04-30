@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class StartActivity extends AppCompatActivity {
 
     // Initializing all variables..
-    private Button buttonGoToAdmin, buttonGoToUser;
+    private Button buttonGoToAdmin, buttonGoToUser, buttonDropDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,8 +21,9 @@ public class StartActivity extends AppCompatActivity {
         // initialize all variables with their layout items.
         buttonGoToAdmin = findViewById(R.id.buttonGoToMapsActivity);
         buttonGoToUser = findViewById(R.id.buttonGoToMapsUserActivity);
-        buttonGoToAdmin.setBackgroundColor(getResources().getColor(R.color.gray));
-        buttonGoToUser.setBackgroundColor(getResources().getColor(R.color.gray));
+        buttonDropDb = findViewById(R.id.buttonDropDatabase);
+/*        buttonGoToAdmin.setBackgroundColor(getResources().getColor(R.color.gray));
+        buttonGoToUser.setBackgroundColor(getResources().getColor(R.color.gray));*/
 
         buttonGoToAdmin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -40,5 +41,16 @@ public class StartActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        buttonDropDb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                dropDb();
+            }
+        });
+    }
+    private void dropDb(){
+        this.deleteDatabase("LCF");
     }
 }

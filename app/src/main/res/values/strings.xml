@@ -8,6 +8,7 @@
     <!--            StartActivity                    -->
     <string name="startMapsActivity">Admin</string>
     <string name="startMapsUserActivity">User</string>
+    <string name="dropDb">Drop Database</string>
     <string name="startActivityhead">LC-Forever</string>
 
     <!--            MapsActivity                    -->

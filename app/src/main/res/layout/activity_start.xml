@@ -9,16 +9,29 @@
     android:id="@+id/startActivityhead"
     tools:context=".StartActivity">
 
-
-    <!--Heading Text View-->
-
     <Button
-        android:id="@+id/buttonGoToMapsActivity"
-        android:layout_width="175dp"
+        android:id="@+id/buttonDropDatabase"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="22dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="495dp"
+        android:background="@color/purple_700"
+        android:padding="10dp"
+        android:text="@string/dropDb"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        tools:ignore="DuplicateClickableBoundsCheck" />
+
+    <Button
+        android:id="@+id/buttonGoToMapsActivity"
+        android:layout_width="170dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="120dp"
         android:layout_marginBottom="63dp"
         android:background="@color/purple_700"
@@ -30,12 +43,12 @@
 
     <Button
         android:id="@+id/buttonGoToMapsUserActivity"
-        android:layout_width="175dp"
+        android:layout_width="170dp"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_marginTop="120dp"
-        android:layout_marginEnd="22dp"
+        android:layout_marginEnd="20dp"
         android:layout_marginBottom="63dp"
         android:background="@color/purple_700"
         android:padding="10dp"
