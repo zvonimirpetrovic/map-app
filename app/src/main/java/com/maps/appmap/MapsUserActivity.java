@@ -4,11 +4,9 @@ import static android.graphics.Color.RED;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -16,12 +14,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.GestureDetector;
-import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -35,15 +28,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.PolyUtil;
-import com.maps.appmap.databinding.ActivityMapsBinding;
 import com.maps.appmap.databinding.ActivityMapsUserBinding;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Blob;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -60,6 +50,9 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
     private Polyline polylineToLoad;
     private PolylineOptions mPolylineOptions;
     private byte[] audioFile = null;
+
+    // MediaPlayer
+    private MediaPlayer mp = null;
 
 
     @Override
@@ -132,13 +125,12 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             }
         });
 
-        // TODO: Find a way to pause audio
         // ClickListener for btnStopPlay
         findViewById(R.id.btnStopPlay).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
                 // Pause audio
-//                RecordSoundActivity.pausePlaying();
+                pauseAudioFromDb();
                 findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
                 findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
             }
@@ -206,6 +198,8 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
 
     }
 
+
+    // TODO: Create a class to handle database related methods
     private List<String> getAllRoutesFromDb() {
         List<String> list = new ArrayList<>();
         SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
@@ -265,7 +259,6 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
     private void playAudioFromDb(byte[] audio){
         File file = null;
         FileOutputStream fos;
-        MediaPlayer mp;
 
         try {
             // Check Permissions
@@ -289,6 +282,11 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         }
         mp = MediaPlayer.create(this, Uri.fromFile(file));
         mp.start();
+    }
+
+    private void pauseAudioFromDb(){
+        mp.release();
+        mp = null;
     }
 
     private void deleteRoutesWithNoAudio() {

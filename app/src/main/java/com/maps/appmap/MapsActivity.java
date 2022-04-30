@@ -46,6 +46,9 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.function.Consumer;
 
+
+//TODO: Make MapsActivity extend MapsUserActivity for less code repetition
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -455,7 +458,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Methods for handling data in db
      *
      */
-    // TODO: make whole CRUD
+     /* TODO: make whole CRUD
+            Create a class to handle database related methods*/
 
     private void saveDataToDb(String save){
 
