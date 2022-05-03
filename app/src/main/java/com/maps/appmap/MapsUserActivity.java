@@ -14,7 +14,9 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -170,34 +172,67 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
                 lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, ContextCompat.getMainExecutor(this), new Consumer<Location>() {
                     @Override
                     public void accept(Location location) {
-
+                        double longitude = location.getLongitude();
+                        double latitude = location.getLatitude();
+                        LatLng startLatLng = new LatLng(latitude, longitude);
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
+                        mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
+                        mMap.getUiSettings().setZoomControlsEnabled(true);
+                        mMap.getUiSettings().setMyLocationButtonEnabled(true);
                     }
                 });
             } else {
                 // Handle location for android previous releases
-                lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, (LocationListener) this, null);
+                lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, new LocationListenerGPS(), null);
             }
-
-            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
             // Avoid assigning a null to location
-            if (location != null) {
-                double longitude = location.getLongitude();
-                double latitude = location.getLatitude();
-                LatLng startLatLng = new LatLng(latitude, longitude);
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
-            } else {
+            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location == null) {
                 LatLng startLatLng = new LatLng(90, 90);
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
+                Toast.makeText(
+                       this,
+                       "Couldn't get location from GPS",
+                       Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    // For requestSingleUpdate() function (version < Android 11)
+    public class LocationListenerGPS implements LocationListener {
+        @Override
+        public void onLocationChanged(Location location) {
+            double longitude = location.getLongitude();
+            double latitude = location.getLatitude();
+            LatLng startLatLng = new LatLng(latitude, longitude);
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
             mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
             mMap.getUiSettings().setZoomControlsEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(true);
-
         }
 
-    }
+        @Override
+        public void onProviderDisabled(String provider) {
+            if (Log.isLoggable("DialerProvider", Log.VERBOSE)) {
+                Log.v("DialerProvider", "onProviderDisabled: " + provider);
+            }
+        }
 
+        @Override
+        public void onProviderEnabled(String provider) {
+            if (Log.isLoggable("DialerProvider", Log.VERBOSE)) {
+                Log.v("DialerProvider", "onProviderEnabled: " + provider);
+            }
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            if (Log.isLoggable("DialerProvider", Log.VERBOSE)) {
+                Log.v("DialerProvider", "onStatusChanged: " + provider + ", " + status + ", " + extras);
+            }
+        }
+    }
 
     // TODO: Create a class to handle database related methods
     private List<String> getAllRoutesFromDb() {
