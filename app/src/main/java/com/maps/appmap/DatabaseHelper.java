@@ -2,14 +2,20 @@ package com.maps.appmap;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.maps.android.PolyUtil;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,4 +111,60 @@ public class DatabaseHelper {
 
         return getAudioForSelectedRoute(context, pointsOnTheMapString);
     }
+
+    // Method to save audio file to database
+    public static void saveAudioToDb(Context context, Activity activity){
+
+        SQLiteDatabase db;
+        byte[] byteAudio;
+
+        db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+
+        try
+        {
+            FileInputStream instream = new FileInputStream(context.getExternalCacheDir().getAbsolutePath() + "/AudioRecording.3gp");
+            BufferedInputStream bif = new BufferedInputStream(instream);
+            byteAudio = new byte[bif.available()];
+
+            ContentValues newAudio = new ContentValues();
+            newAudio.put("Audio", byteAudio);
+            int maxId = getLastRouteIdFromDb(context);
+            long ret = db.update("Routes", newAudio, "RoutesID = " + maxId, null);
+            if(ret>0){
+                Toast.makeText(
+                        activity,
+                        "\r\n Audio was successfully added to database! \r\n",
+                        Toast.LENGTH_LONG).show();
+            }
+            else Toast.makeText(
+                    activity,
+                    "\r\n Error add audio failed! \r\n",
+                    Toast.LENGTH_LONG).show();
+        } catch (IOException e)
+        {
+            Toast.makeText(
+                    activity,
+                    "\r\n!!! Error: " + e+"!!!\r\n",
+                    Toast.LENGTH_LONG).show();
+        }
+
+        db.close();
+    }
+
+    public static int getLastRouteIdFromDb(Context context) {
+        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        int maxRow = 0;
+        String selectQuery = "SELECT RoutesID from Routes;";
+
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToLast()) {
+            maxRow = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+
+        return maxRow;
+    }
 }
+

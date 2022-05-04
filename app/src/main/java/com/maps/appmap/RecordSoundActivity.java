@@ -1,6 +1,7 @@
 package com.maps.appmap;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -46,6 +47,7 @@ public class RecordSoundActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Context context = this;
 
         setContentView(R.layout.activity_sound_recording);
 
@@ -56,10 +58,19 @@ public class RecordSoundActivity extends AppCompatActivity {
         playTV = findViewById(R.id.btnPlay);
         stopplayTV = findViewById(R.id.btnStopPlay);
         buttonSaveAudio = findViewById(R.id.buttonSaveRecording);
+
+        // Set colors for buttons
         stopTV.setBackgroundColor(getResources().getColor(R.color.gray));
         playTV.setBackgroundColor(getResources().getColor(R.color.gray));
         stopplayTV.setBackgroundColor(getResources().getColor(R.color.gray));
         buttonSaveAudio.setBackgroundColor(getResources().getColor(R.color.gray));
+
+        // Setting clickable states for buttons
+        startTV.setClickable(true);
+        stopTV.setClickable(false);
+        playTV.setClickable(false);
+        stopplayTV.setClickable(false);
+        buttonSaveAudio.setClickable(false);
 
         startTV.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -67,6 +78,13 @@ public class RecordSoundActivity extends AppCompatActivity {
                 // start recording method will
                 // start the recording of audio.
                 startRecording();
+
+                // Setting clickable states for buttons
+                startTV.setClickable(false);
+                stopTV.setClickable(true);
+                playTV.setClickable(false);
+                stopplayTV.setClickable(false);
+                buttonSaveAudio.setClickable(false);
             }
         });
         stopTV.setOnClickListener(new View.OnClickListener() {
@@ -75,6 +93,13 @@ public class RecordSoundActivity extends AppCompatActivity {
                 // pause Recording method will
                 // pause the recording of audio.
                 pauseRecording();
+
+                // Setting clickable states for buttons
+                startTV.setClickable(true);
+                stopTV.setClickable(false);
+                playTV.setClickable(true);
+                stopplayTV.setClickable(false);
+                buttonSaveAudio.setClickable(true);
             }
         });
         playTV.setOnClickListener(new View.OnClickListener() {
@@ -83,6 +108,13 @@ public class RecordSoundActivity extends AppCompatActivity {
                 // play audio method will play
                 // the audio which we have recorded
                 playAudio();
+
+                // Setting clickable states for buttons
+                startTV.setClickable(true);
+                stopTV.setClickable(false);
+                playTV.setClickable(false);
+                stopplayTV.setClickable(true);
+                buttonSaveAudio.setClickable(true);
             }
         });
         stopplayTV.setOnClickListener(new View.OnClickListener() {
@@ -90,17 +122,14 @@ public class RecordSoundActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // pause play method will
                 // pause the play of audio
-
                 pausePlaying();
-            }
-        });
 
-        stopplayTV.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // pause play method will
-                // pause the play of audio
-                pausePlaying();
+                // Setting clickable states for buttons
+                startTV.setClickable(true);
+                stopTV.setClickable(false);
+                playTV.setClickable(true);
+                stopplayTV.setClickable(false);
+                buttonSaveAudio.setClickable(true);
             }
         });
 
@@ -108,7 +137,7 @@ public class RecordSoundActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                saveAudioToDb();
+                DatabaseHelper.saveAudioToDb(context, RecordSoundActivity.this);
 
                 Intent intent = new Intent(RecordSoundActivity.this, MapsActivity.class);
                 startActivity(intent);
@@ -199,8 +228,6 @@ public class RecordSoundActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(RecordSoundActivity.this, new String[]{RECORD_AUDIO, WRITE_EXTERNAL_STORAGE}, REQUEST_AUDIO_PERMISSION_CODE);
     }
 
-    // TODO: Find solution to the bug in which a user can click
-    // multiple times on play and that many times will reproduce
     public void playAudio() {
         stopTV.setBackgroundColor(getResources().getColor(R.color.gray));
         startTV.setBackgroundColor(getResources().getColor(R.color.purple_200));
@@ -227,7 +254,7 @@ public class RecordSoundActivity extends AppCompatActivity {
         stopTV.setBackgroundColor(getResources().getColor(R.color.gray));
         startTV.setBackgroundColor(getResources().getColor(R.color.purple_200));
         playTV.setBackgroundColor(getResources().getColor(R.color.purple_200));
-        stopplayTV.setBackgroundColor(getResources().getColor(R.color.purple_200));
+        stopplayTV.setBackgroundColor(getResources().getColor(R.color.gray));
 
         // stop audio recording
         mRecorder.stop();
