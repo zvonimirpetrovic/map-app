@@ -3,10 +3,9 @@ package com.maps.appmap;
 import static android.graphics.Color.RED;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Point;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -51,13 +50,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // Drawing by touch variables
     private View mMapShelterView;
     private GestureDetector mGestureDetector;
-    private ArrayList<LatLng> mLatlngs = new ArrayList<LatLng>();
+    private ArrayList<LatLng> mLatlngs = new ArrayList<>();
     private PolylineOptions mPolylineOptions;
     // flag to differentiate whether user is touching to draw or not
     private boolean mDrawFinished = false;
     // Variable for saving route in db
     private String pointsToSave = null;
-    private ArrayList<LatLng> pointsToLoad = new ArrayList<LatLng>();
+    private ArrayList<LatLng> pointsToLoad = new ArrayList<>();
     private List<String> savedRoutes = null;
     private Polyline polylineToLoad;
 
@@ -182,20 +181,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        Context context = this;
 
         // Setup for map options and permissions
         MapHandler.setUpMap(this, MapsActivity.this, mMap);
 
         // Delete all routes which have no audio
-        deleteRoutesWithNoAudio();
+        DatabaseHelper.deleteRoutesWithNoAudio(this);
 
         // Getting saved routes from db
-        savedRoutes = getAllRoutesFromDb();
-        if(savedRoutes != null) {
-            drawSavedPolylines(savedRoutes);
-        }
+        savedRoutes = DatabaseHelper.getAllRoutesFromDb(this);
 
-        MotionEvent event = null;
+        // Drawing saved routes from db
+        drawSavedPolylines(savedRoutes);
 
        // ClickListener for buttonStartDraw
         findViewById(R.id.buttonStartDraw).setOnClickListener(new View.OnClickListener() {
@@ -206,13 +204,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 drawZone(findViewById(R.id.drawer_view));
 
                 // Delete all routes which have no audio
-                deleteRoutesWithNoAudio();
+                DatabaseHelper.deleteRoutesWithNoAudio(context);
 
                 // Getting saved routes from db
-                savedRoutes = getAllRoutesFromDb();
-                if(savedRoutes != null) {
-                    drawSavedPolylines(savedRoutes);
-                }
+                savedRoutes = DatabaseHelper.getAllRoutesFromDb(context);
+                // Drawing saved routes
+                drawSavedPolylines(savedRoutes);
 
                 mMap.getUiSettings().setScrollGesturesEnabled(false);
                 findViewById(R.id.buttonStartDraw).setVisibility(View.GONE);
@@ -227,7 +224,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 mMap.clear();
                 // Getting saved routes from db
-                savedRoutes = getAllRoutesFromDb();
+                savedRoutes = DatabaseHelper.getAllRoutesFromDb(context);
                 if(savedRoutes != null) {
                     drawSavedPolylines(savedRoutes);
                 }
@@ -270,7 +267,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     findViewById(R.id.buttonSave).setVisibility(View.GONE);
 
                     // Save route to DB
-                    saveDataToDb(pointsToSave);
+                    DatabaseHelper.saveDataToDb(context, pointsToSave);
 
                     // Navigation handled by switching activity
                     changeActivity();
@@ -291,7 +288,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
 
                 // Get audio for a route based on encoded route field
-                byte[] audioBlob = getAudioForSelectedRoute(pointsOnTheMapString);
+                byte[] audioBlob = DatabaseHelper.getAudioForSelectedRoute(context, pointsOnTheMapString);
 
                 // Play audio
                 playAudioFromDb(audioBlob);
@@ -352,96 +349,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-         /**
-         * Method gets called on tap of draw button, It prepares the screen to draw
-         * the custom polyline
-         *
-         * @param view
-         */
-
-        public void drawZone(View view) {
-            mMap.clear();
-            mLatlngs.clear();
-            mPolylineOptions = null;
-            mDrawFinished = true;
-            mMapShelterView.setVisibility(View.VISIBLE);
-            mMap.getUiSettings().setScrollGesturesEnabled(false);
-        }
-
-        public void setGestures(boolean b){
-            mMap.getUiSettings().setScrollGesturesEnabled(b);
-        }
-
-        public void setOnMapClickListenerToNull(){
-            mMap.setOnMapClickListener(null);
-        }
-
-        public void clearMap(){
-            mMap.clear();
-        }
-
-        public void setDrawing(boolean b){
-            drawing = b;
-        }
-
-        private void changeActivity(){
-
-            Intent intent = new Intent(this, RecordSoundActivity.class);
-            startActivity(intent);
-        }
-
-    /**
-     *
-     * Methods for handling data in db
+     /**
+     * Method gets called on tap of draw button, It prepares the screen to draw
+     * the custom polyline
      *
      */
-     /* TODO: make whole CRUD
-            Create a class to handle database related methods*/
 
-    private void saveDataToDb(String save){
-
-        SQLiteDatabase db = openOrCreateDatabase("LCF",MODE_PRIVATE,null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-        db.execSQL("INSERT INTO Routes VALUES(NULL, 'admin', '" + save + "', NULL);");
+    public void drawZone(View view) {
+        mMap.clear();
+        mLatlngs.clear();
+        mPolylineOptions = null;
+        mDrawFinished = true;
+        mMapShelterView.setVisibility(View.VISIBLE);
+        mMap.getUiSettings().setScrollGesturesEnabled(false);
     }
 
-    private String getLastRouteFromDb(){
-        String value = null;
-        SQLiteDatabase db = openOrCreateDatabase("LCF",MODE_PRIVATE,null);
-
-        String selectQuery = "SELECT EncodedRoute from Routes;";
-        Cursor cursor = db.rawQuery(selectQuery, null);
-        if(cursor.moveToLast()){
-            value = cursor.getString(0);
-        }
-        return value;
-    }
-
-    private List<String> getAllRoutesFromDb() {
-        List<String> list = new ArrayList<>();
-        SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-
-
-        String selectQuery = "SELECT EncodedRoute from Routes;";
-
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToFirst()) {
-            while (!cursor.isAfterLast()) {
-                String name = cursor.getString(0);
-
-                list.add(name);
-                cursor.moveToNext();
-            }
-        }
-        cursor.close();
-        db.close();
-
-        return list;
-    }
-
-    // Draw saved routes on the map
+    /**
+     * Draw saved routes on the map
+     *
+     */
     private void drawSavedPolylines(List<String> l){
 
         // Iterate through passed list of lat/lng strings and decode it to geo points
@@ -458,21 +384,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private byte[] getAudioForSelectedRoute(String s){
-        SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        byte[] byteAudio = null;
-
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-
-
-        String selectQuery = "SELECT Audio from Routes WHERE EncodedRoute = '" + s + "';";
-
-        Cursor cursor = db.rawQuery(selectQuery, null);
-        if (cursor.moveToFirst())
-            byteAudio = cursor.getBlob(0);
-        return byteAudio;
-    }
-
+    /**
+     * Method for playing saved audio
+     *
+     */
     private void playAudioFromDb(byte[] audio){
         File file = null;
         FileOutputStream fos;
@@ -502,10 +417,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mp.start();
     }
 
-    private void deleteRoutesWithNoAudio() {
+    /**
+     * Method for switching to RecordSoundActivity
+     *
+     */
+    private void changeActivity(){
 
-        SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-        db.delete("Routes", "Audio IS NULL", null);
+        Intent intent = new Intent(this, RecordSoundActivity.class);
+        startActivity(intent);
     }
 }

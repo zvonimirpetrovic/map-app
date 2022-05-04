@@ -13,17 +13,16 @@ import com.google.maps.android.PolyUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DatabaseHelper {
+/* TODO: make whole CRUD
+        Handle database name, table names and field names dynamically*/
 
+public class DatabaseHelper {
     /**
      *
      * Methods for handling data in db
      *
      */
-     /* TODO: make whole CRUD
-            Create a class to handle database related methods*/
-
-    public void saveDataToDb(Context context, String save){
+    public static void saveDataToDb(Context context, String save){
 
         SQLiteDatabase db = context.openOrCreateDatabase("LCF",MODE_PRIVATE,null);
         db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
@@ -31,15 +30,19 @@ public class DatabaseHelper {
         db.close();
     }
 
-    public String getLastRouteFromDb(Context context){
+    public static String getLastRouteFromDb(Context context){
         String value = null;
         SQLiteDatabase db = context.openOrCreateDatabase("LCF",MODE_PRIVATE,null);
 
         String selectQuery = "SELECT EncodedRoute from Routes;";
         Cursor cursor = db.rawQuery(selectQuery, null);
+
         if(cursor.moveToLast()){
             value = cursor.getString(0);
         }
+
+        cursor.close();
+
         return value;
     }
 
@@ -67,17 +70,19 @@ public class DatabaseHelper {
     }
 
     public static byte[] getAudioForSelectedRoute(Context context, String s){
-        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
         byte[] byteAudio = null;
 
+        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-
 
         String selectQuery = "SELECT Audio from Routes WHERE EncodedRoute = '" + s + "';";
 
         Cursor cursor = db.rawQuery(selectQuery, null);
         if (cursor.moveToFirst())
             byteAudio = cursor.getBlob(0);
+
+        cursor.close();
+
         return byteAudio;
     }
 
@@ -97,8 +102,7 @@ public class DatabaseHelper {
         String pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
 
         // Get audio for a route based on encoded route field
-        byte[] audioBlob = getAudioForSelectedRoute(context, pointsOnTheMapString);
 
-        return audioBlob;
+        return getAudioForSelectedRoute(context, pointsOnTheMapString);
     }
 }
