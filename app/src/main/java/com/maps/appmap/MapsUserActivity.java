@@ -3,26 +3,17 @@ package com.maps.appmap;
 import static android.graphics.Color.RED;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -37,7 +28,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class MapsUserActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -55,7 +45,6 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
 
     // MediaPlayer
     private MediaPlayer mp = null;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +80,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         mMap = googleMap;
 
         // Setup for map options and permissions
-        setUpMap();
+        MapHandler.setUpMap(this, MapsUserActivity.this, mMap);
 
         // Delete all routes which have no audio
         deleteRoutesWithNoAudio();
@@ -143,95 +132,6 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
     public void onDestroy() {
         super.onDestroy();
         binding = null;
-    }
-
-    /**
-     * Method for initial map setup
-     * Handles permissions and sets camera options
-     */
-    private void setUpMap() {
-        // Check Permissions
-        if (ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Request permission
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{(Manifest.permission.ACCESS_FINE_LOCATION)},
-                    34 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
-            );
-
-        } else {
-
-            // Map Options
-            mMap.setMyLocationEnabled(true);
-
-            // Handle location for android 11 and above (Build.VERSION_CODES.R)
-            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, ContextCompat.getMainExecutor(this), new Consumer<Location>() {
-                    @Override
-                    public void accept(Location location) {
-                        double longitude = location.getLongitude();
-                        double latitude = location.getLatitude();
-                        LatLng startLatLng = new LatLng(latitude, longitude);
-                        mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
-                        mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
-                        mMap.getUiSettings().setZoomControlsEnabled(true);
-                        mMap.getUiSettings().setMyLocationButtonEnabled(true);
-                    }
-                });
-            } else {
-                // Handle location for android previous releases
-                lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, new LocationListenerGPS(), null);
-            }
-
-            // Avoid assigning a null to location
-            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (location == null) {
-                LatLng startLatLng = new LatLng(90, 90);
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
-                Toast.makeText(
-                       this,
-                       "Couldn't get location from GPS",
-                       Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    // For requestSingleUpdate() function (version < Android 11)
-    public class LocationListenerGPS implements LocationListener {
-        @Override
-        public void onLocationChanged(Location location) {
-            double longitude = location.getLongitude();
-            double latitude = location.getLatitude();
-            LatLng startLatLng = new LatLng(latitude, longitude);
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
-            mMap.getUiSettings().setZoomControlsEnabled(true);
-            mMap.getUiSettings().setMyLocationButtonEnabled(true);
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            if (Log.isLoggable("DialerProvider", Log.VERBOSE)) {
-                Log.v("DialerProvider", "onProviderDisabled: " + provider);
-            }
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            if (Log.isLoggable("DialerProvider", Log.VERBOSE)) {
-                Log.v("DialerProvider", "onProviderEnabled: " + provider);
-            }
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            if (Log.isLoggable("DialerProvider", Log.VERBOSE)) {
-                Log.v("DialerProvider", "onStatusChanged: " + provider + ", " + status + ", " + extras);
-            }
-        }
     }
 
     // TODO: Create a class to handle database related methods
