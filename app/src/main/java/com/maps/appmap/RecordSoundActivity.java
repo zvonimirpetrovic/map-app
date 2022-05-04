@@ -1,6 +1,7 @@
 package com.maps.appmap;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -106,9 +107,11 @@ public class RecordSoundActivity extends AppCompatActivity {
         buttonSaveAudio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//            TODO: Save recording to the db
+
                 saveAudioToDb();
 
+                Intent intent = new Intent(RecordSoundActivity.this, MapsActivity.class);
+                startActivity(intent);
             }
         });
     }
@@ -228,6 +231,9 @@ public class RecordSoundActivity extends AppCompatActivity {
 
         // stop audio recording
         mRecorder.stop();
+
+        // reset recorder
+        mRecorder.reset();
 
         // release media recorder class
         mRecorder.release();

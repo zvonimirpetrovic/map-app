@@ -3,9 +3,8 @@ package com.maps.appmap;
 import static android.graphics.Color.RED;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -78,15 +77,16 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        Context context = this;
 
         // Setup for map options and permissions
         MapHandler.setUpMap(this, MapsUserActivity.this, mMap);
 
         // Delete all routes which have no audio
-        deleteRoutesWithNoAudio();
+        DatabaseHelper.deleteRoutesWithNoAudio(this);
 
         // Getting saved routes from db
-        savedRoutes = getAllRoutesFromDb();
+        savedRoutes = DatabaseHelper.getAllRoutesFromDb(this);
         if(savedRoutes != null) {
             drawSavedPolylines(savedRoutes);
         }
@@ -97,8 +97,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             @Override
             public void onPolylineClick(Polyline polyline)
             {
-
-                audioFile = retrieveAudioFromDb(polyline);
+                audioFile = DatabaseHelper.getAudioFromDb(context, polyline);
 
                 // Enable button for playing audio
                 findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
@@ -134,31 +133,6 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         binding = null;
     }
 
-    // TODO: Create a class to handle database related methods
-    private List<String> getAllRoutesFromDb() {
-        List<String> list = new ArrayList<>();
-        SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-
-
-        String selectQuery = "SELECT EncodedRoute from Routes;";
-
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToFirst()) {
-            while (!cursor.isAfterLast()) {
-                String name = cursor.getString(0);
-
-                list.add(name);
-                cursor.moveToNext();
-            }
-        }
-        cursor.close();
-        db.close();
-
-        return list;
-    }
-
     // Draw saved routes on the map
     private void drawSavedPolylines(List<String> l){
 
@@ -176,19 +150,10 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         }
     }
 
-    private byte[] getAudioForSelectedRoute(String s){
-        SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        byte[] byteAudio = null;
-
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-
-
-        String selectQuery = "SELECT Audio from Routes WHERE EncodedRoute = '" + s + "';";
-
-        Cursor cursor = db.rawQuery(selectQuery, null);
-        if (cursor.moveToFirst())
-            byteAudio = cursor.getBlob(0);
-        return byteAudio;
+    private void pauseAudioFromDb(){
+        mp.reset();
+        mp.release();
+        mp = null;
     }
 
     private void playAudioFromDb(byte[] audio){
@@ -217,30 +182,5 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         }
         mp = MediaPlayer.create(this, Uri.fromFile(file));
         mp.start();
-    }
-
-    private void pauseAudioFromDb(){
-        mp.release();
-        mp = null;
-    }
-
-    private void deleteRoutesWithNoAudio() {
-        SQLiteDatabase db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-
-        db.delete("Routes", "Audio IS NULL", null);
-    }
-
-    private byte[] retrieveAudioFromDb(Polyline polyline){
-        // Get LatLng points from clicked polyline
-        List<LatLng> pointsOnTheMap = polyline.getPoints();
-
-        // Encode retrieved points to string
-        String pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
-
-        // Get audio for a route based on encoded route field
-        byte[] audioBlob = getAudioForSelectedRoute(pointsOnTheMapString);
-
-        return audioBlob;
     }
 }
