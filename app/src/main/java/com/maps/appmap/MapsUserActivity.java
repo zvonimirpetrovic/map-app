@@ -32,11 +32,9 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
 
     private GoogleMap mMap;
     private ActivityMapsUserBinding binding;
-    public static final String TAG = "detailsFragment";
 
-    // Variable for saving route in db
-    private String pointsToSave = null;
-    private ArrayList<LatLng> pointsToLoad = new ArrayList<LatLng>();
+    // Variables for loading routes and audio from db
+    private ArrayList<LatLng> pointsToLoad = new ArrayList<>();
     private List<String> savedRoutes = null;
     private Polyline polylineToLoad;
     private PolylineOptions mPolylineOptions;
@@ -87,9 +85,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
 
         // Getting saved routes from db
         savedRoutes = DatabaseHelper.getAllRoutesFromDb(this);
-        if(savedRoutes != null) {
-            drawSavedPolylines(savedRoutes);
-        }
+        drawSavedPolylines(savedRoutes);
 
         // ClickListener for playing audio when polyline is clicked
         mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener()
@@ -122,7 +118,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
                 // Pause audio
                 pauseAudioFromDb();
                 findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
-                findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
+                findViewById(R.id.btnPlay).setVisibility(View.GONE);
             }
         });
     }
@@ -133,7 +129,10 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         binding = null;
     }
 
-    // Draw saved routes on the map
+    /**
+     * Draw saved routes on the map
+     *
+     */
     private void drawSavedPolylines(List<String> l){
 
         // Iterate through passed list of lat/lng strings and decode it to geo points
@@ -150,12 +149,10 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         }
     }
 
-    private void pauseAudioFromDb(){
-        mp.reset();
-        mp.release();
-        mp = null;
-    }
-
+    /**
+     * Method for playing saved audio
+     *
+     */
     private void playAudioFromDb(byte[] audio){
         File file = null;
         FileOutputStream fos;
@@ -182,5 +179,15 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         }
         mp = MediaPlayer.create(this, Uri.fromFile(file));
         mp.start();
+    }
+
+    /**
+     * Method for pausing audio
+     *
+     */
+    private void pauseAudioFromDb(){
+        mp.reset();
+        mp.release();
+        mp = null;
     }
 }
