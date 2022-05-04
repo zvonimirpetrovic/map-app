@@ -3,18 +3,13 @@ package com.maps.appmap;
 import static android.graphics.Color.RED;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Point;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -24,10 +19,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -40,14 +33,9 @@ import com.maps.appmap.databinding.ActivityMapsBinding;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Blob;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.function.Consumer;
-
-
-//TODO: Make MapsActivity extend MapsUserActivity for less code repetition
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -196,7 +184,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         // Setup for map options and permissions
-        setUpMap();
+        MapHandler.setUpMap(this, MapsActivity.this, mMap);
 
         // Delete all routes which have no audio
         deleteRoutesWithNoAudio();
@@ -277,6 +265,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     mMap.setOnMapClickListener(null);
                     mMap.getUiSettings().setScrollGesturesEnabled(true);
                     drawing = false; // So that deleting previous polyline would work
+                    findViewById(R.id.buttonStartDraw).setVisibility(View.VISIBLE);
+                    findViewById(R.id.buttonEndDraw).setVisibility(View.GONE);
+                    findViewById(R.id.buttonSave).setVisibility(View.GONE);
 
                     // Save route to DB
                     saveDataToDb(pointsToSave);
@@ -314,60 +305,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding = null;
     }
 
-    /**
-     * Method for initial map setup
-     * Handles permissions and sets camera options
-     */
-    private void setUpMap() {
-        // Check Permissions
-        if (ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Request permission
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{(Manifest.permission.ACCESS_FINE_LOCATION)},
-                    34 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
-            );
-
-        } else {
-
-            // Map Options
-            mMap.setMyLocationEnabled(true);
-
-            // Handle location for android 11 and above (Build.VERSION_CODES.R)
-            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                lm.getCurrentLocation(LocationManager.GPS_PROVIDER, null, ContextCompat.getMainExecutor(this), new Consumer<Location>() {
-                    @Override
-                    public void accept(Location location) {
-
-                    }
-                });
-            } else {
-                // Handle location for android previous releases
-                lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, (LocationListener) this, null);
-            }
-
-            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
-            // Avoid assigning a null to location
-            if (location != null) {
-                double longitude = location.getLongitude();
-                double latitude = location.getLatitude();
-                LatLng startLatLng = new LatLng(latitude, longitude);
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
-            } else {
-                LatLng startLatLng = new LatLng(90, 90);
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
-            }
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
-            mMap.getUiSettings().setZoomControlsEnabled(true);
-            mMap.getUiSettings().setMyLocationButtonEnabled(true);
-
-        }
-
-    }
 
     /**
      * Drawing method onClick (point-to-point)
