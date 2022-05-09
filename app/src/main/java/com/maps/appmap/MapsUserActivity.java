@@ -79,9 +79,6 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         // Setup for map options and permissions
         MapHandler.setUpMap(this, MapsUserActivity.this, mMap);
 
-        // Delete all routes which have no audio
-        DatabaseHelper.deleteRoutesWithNoAudio(this);
-
         // Getting saved routes from db
         savedRoutes = DatabaseHelper.getAllRoutesFromDb(this);
         drawSavedPolylines(savedRoutes);

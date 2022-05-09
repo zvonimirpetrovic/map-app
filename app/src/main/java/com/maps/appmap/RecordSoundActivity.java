@@ -22,7 +22,6 @@ import java.io.IOException;
 
 import static android.Manifest.permission.RECORD_AUDIO;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-import static com.maps.appmap.DatabaseHelper.saveAudioToDb;
 
 
 public class RecordSoundActivity extends AppCompatActivity {
@@ -68,7 +67,7 @@ public class RecordSoundActivity extends AppCompatActivity {
         stopTV.setClickable(false);
         playTV.setClickable(false);
         stopplayTV.setClickable(false);
-        buttonSaveAudio.setClickable(false);
+        buttonSaveAudio.setEnabled(false);
 
         startTV.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,7 +81,7 @@ public class RecordSoundActivity extends AppCompatActivity {
                 stopTV.setClickable(true);
                 playTV.setClickable(false);
                 stopplayTV.setClickable(false);
-                buttonSaveAudio.setClickable(false);
+                buttonSaveAudio.setEnabled(false);
             }
         });
         stopTV.setOnClickListener(new View.OnClickListener() {
@@ -97,7 +96,7 @@ public class RecordSoundActivity extends AppCompatActivity {
                 stopTV.setClickable(false);
                 playTV.setClickable(true);
                 stopplayTV.setClickable(false);
-                buttonSaveAudio.setClickable(true);
+                buttonSaveAudio.setEnabled(true);
             }
         });
         playTV.setOnClickListener(new View.OnClickListener() {
@@ -112,7 +111,7 @@ public class RecordSoundActivity extends AppCompatActivity {
                 stopTV.setClickable(false);
                 playTV.setClickable(false);
                 stopplayTV.setClickable(true);
-                buttonSaveAudio.setClickable(true);
+                buttonSaveAudio.setEnabled(true);
             }
         });
         stopplayTV.setOnClickListener(new View.OnClickListener() {
@@ -127,7 +126,7 @@ public class RecordSoundActivity extends AppCompatActivity {
                 stopTV.setClickable(false);
                 playTV.setClickable(true);
                 stopplayTV.setClickable(false);
-                buttonSaveAudio.setClickable(true);
+                buttonSaveAudio.setEnabled(true);
             }
         });
 
@@ -135,7 +134,8 @@ public class RecordSoundActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                saveAudioToDb(context, RecordSoundActivity.this);
+                String pointsToSave = getIntent().getStringExtra("pointsToSave");
+                DatabaseHelper.saveAudioAndRouteToDb(context, RecordSoundActivity.this, pointsToSave);
 
                 Intent intent = new Intent(RecordSoundActivity.this, MapsActivity.class);
                 startActivity(intent);

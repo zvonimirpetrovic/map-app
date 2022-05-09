@@ -152,33 +152,18 @@ public class DatabaseHelper {
 
         return audioPath;
     }
-//      TODO: deleting audio files with no route
-/*    public static String deleteAudioWithoutPath(Context context, String path){
 
-        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, AudioPath VARCHAR);");
+// Method to save route and path to audio to database
+    public static void saveAudioAndRouteToDb(Context context, Activity activity, String save){
 
-        List<String> filesList = new ArrayList<String>();
+        SQLiteDatabase db;
+        String audioPath;
 
-        File[] files = new File(path).listFiles();
-        //If this pathname does not denote a directory, then listFiles() returns null.
+        db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        audioPath = context.getExternalCacheDir().getAbsolutePath() + "/AudioRecording" + getLastRouteIdFromDb(context) + ".3gp";
+        db.execSQL("INSERT INTO Routes VALUES(NULL, 'admin', '" + save + "', '" + audioPath + "')");
 
-        for (File file : files) {
-            if (file.isFile()) {
-                filesList.add(file.getName());
-            }
+        db.close();
         }
-
-        String selectQuery = "SELECT AudioPath from Routes WHERE EncodedRoute = '" + s + "';";
-
-        Cursor cursor = db.rawQuery(selectQuery, null);
-        if (cursor.moveToFirst())
-            audioPath = cursor.getString(0);
-
-        cursor.close();
-
-        return audioPath;
-    }*/
-
 }
 

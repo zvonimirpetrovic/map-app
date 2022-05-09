@@ -187,10 +187,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Setup for map options and permissions
         MapHandler.setUpMap(this, MapsActivity.this, mMap);
 
-        // Delete all routes which have no audio
-        DatabaseHelper.deleteRoutesWithNoAudio(this);
-//        DatabaseHelper.deleteAudioWithoutPath(this, getExternalCacheDir().getAbsolutePath());
-
         // Getting saved routes from db
         savedRoutes = DatabaseHelper.getAllRoutesFromDb(this);
 
@@ -267,11 +263,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     findViewById(R.id.buttonEndDraw).setVisibility(View.GONE);
                     findViewById(R.id.buttonSave).setVisibility(View.GONE);
 
-                    // Save route to DB
-                    DatabaseHelper.saveDataToDb(context, pointsToSave);
-
                     // Navigation handled by switching activity
-                    changeActivity();
+                    changeActivity(pointsToSave);
                 }
             }
         });
@@ -414,12 +407,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Method for switching to RecordSoundActivity
      *
      */
-    private void changeActivity(){
+    private void changeActivity(String s){
 
         Intent intent = new Intent(this, RecordSoundActivity.class);
+        intent.putExtra("pointsToSave", s);
         startActivity(intent);
     }
-
-
-
 }
