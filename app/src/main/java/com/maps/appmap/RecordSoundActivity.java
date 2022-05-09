@@ -1,6 +1,5 @@
 package com.maps.appmap;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -19,12 +18,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 
 import static android.Manifest.permission.RECORD_AUDIO;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static com.maps.appmap.DatabaseHelper.saveAudioToDb;
 
 
 public class RecordSoundActivity extends AppCompatActivity {
@@ -137,7 +135,7 @@ public class RecordSoundActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                DatabaseHelper.saveAudioToDb(context, RecordSoundActivity.this);
+                saveAudioToDb(context, RecordSoundActivity.this);
 
                 Intent intent = new Intent(RecordSoundActivity.this, MapsActivity.class);
                 startActivity(intent);
@@ -161,8 +159,9 @@ public class RecordSoundActivity extends AppCompatActivity {
 
             // filename variable with the path of the recorded audio file
 //            mFileName = Environment.getExternalStorageDirectory().getPath();
+            int audioId = DatabaseHelper.getLastRouteIdFromDb(this);
             mFileName = getExternalCacheDir().getAbsolutePath();
-            mFileName += "/AudioRecording.3gp";
+            mFileName += "/AudioRecording" + audioId + ".3gp";
 
             // initialize the media recorder class
             mRecorder = new MediaRecorder();
@@ -293,45 +292,5 @@ public class RecordSoundActivity extends AppCompatActivity {
         db.close();
 
         return maxRow;
-    }
-
-    // Method to save audio file to database
-    private void saveAudioToDb(){
-
-        SQLiteDatabase db;
-        byte[] byteAudio;
-
-        db = openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-
-        try
-        {
-            FileInputStream instream = new FileInputStream(getExternalCacheDir().getAbsolutePath() + "/AudioRecording.3gp");
-            BufferedInputStream bif = new BufferedInputStream(instream);
-            byteAudio = new byte[bif.available()];
-            bif.read(byteAudio);
-
-            ContentValues newAudio = new ContentValues();
-            newAudio.put("Audio", byteAudio);
-            int maxId = getLastRouteIdFromDb();
-            long ret = db.update("Routes", newAudio, "RoutesID = " + maxId, null);
-            if(ret>0){
-                Toast.makeText(
-                        RecordSoundActivity.this,
-                        "\r\n Audio was successfully added to database! \r\n",
-                        Toast.LENGTH_LONG).show();
-            }
-            else Toast.makeText(
-                    RecordSoundActivity.this,
-                    "\r\n Error add audio failed! \r\n",
-                    Toast.LENGTH_LONG).show();
-        } catch (IOException e)
-        {
-            Toast.makeText(
-                    RecordSoundActivity.this,
-                    "\r\n!!! Error: " + e+"!!!\r\n",
-                    Toast.LENGTH_LONG).show();
-        }
-
-        db.close();
     }
 }

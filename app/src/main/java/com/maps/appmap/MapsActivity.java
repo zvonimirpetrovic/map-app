@@ -30,8 +30,6 @@ import com.google.maps.android.PolyUtil;
 import com.maps.appmap.databinding.ActivityMapsBinding;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -52,14 +50,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GestureDetector mGestureDetector;
     private ArrayList<LatLng> mLatlngs = new ArrayList<>();
     private PolylineOptions mPolylineOptions;
+
     // flag to differentiate whether user is touching to draw or not
     private boolean mDrawFinished = false;
+
     // Variable for saving route in db
     private String pointsToSave = null;
     private ArrayList<LatLng> pointsToLoad = new ArrayList<>();
     private List<String> savedRoutes = null;
     private Polyline polylineToLoad;
 
+    private static MediaPlayer mp = new MediaPlayer();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -188,6 +189,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Delete all routes which have no audio
         DatabaseHelper.deleteRoutesWithNoAudio(this);
+//        DatabaseHelper.deleteAudioWithoutPath(this, getExternalCacheDir().getAbsolutePath());
 
         // Getting saved routes from db
         savedRoutes = DatabaseHelper.getAllRoutesFromDb(this);
@@ -225,9 +227,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.clear();
                 // Getting saved routes from db
                 savedRoutes = DatabaseHelper.getAllRoutesFromDb(context);
-                if(savedRoutes != null) {
-                    drawSavedPolylines(savedRoutes);
-                }
+                drawSavedPolylines(savedRoutes);
+
                 mMap.setOnMapClickListener(null);
                 mMap.getUiSettings().setScrollGesturesEnabled(true);
                 findViewById(R.id.buttonStartDraw).setVisibility(View.VISIBLE);
@@ -288,10 +289,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
 
                 // Get audio for a route based on encoded route field
-                byte[] audioBlob = DatabaseHelper.getAudioForSelectedRoute(context, pointsOnTheMapString);
+                String audioPath = DatabaseHelper.getAudioPathForSelectedRoute(context, pointsOnTheMapString);
 
                 // Play audio
-                playAudioFromDb(audioBlob);
+                playAudioFromDb(audioPath);
             }
         });
     }
@@ -354,7 +355,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * the custom polyline
      *
      */
-
     public void drawZone(View view) {
         mMap.clear();
         mLatlngs.clear();
@@ -388,33 +388,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Method for playing saved audio
      *
      */
-    private void playAudioFromDb(byte[] audio){
-        File file = null;
-        FileOutputStream fos;
-        MediaPlayer mp;
+    private void playAudioFromDb(String audioPath) {
+        File file = new File(audioPath);
 
-     try {
-         // Check Permissions
-         if (ActivityCompat.checkSelfPermission(
-                 this,
-                 Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                              // Request permission
-             ActivityCompat.requestPermissions(
-                     this,
-                     new String[]{(Manifest.permission.WRITE_EXTERNAL_STORAGE)},
-                     0 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
-             );
+        // Check Permissions
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            // Request permission
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{(Manifest.permission.WRITE_EXTERNAL_STORAGE)},
+                    0 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
+            );
 
-                file = File.createTempFile("sound", ".3gp");
-                fos = new FileOutputStream(file);
-                fos.write(audio);
-                fos.close();
-        } catch (
-        IOException e) {
-            e.printStackTrace();
-        }
+
         mp = MediaPlayer.create(this, Uri.fromFile(file));
-                mp.start();
+//         mp.setDataSource(file.getAbsolutePath());
+        Log.d("aaaaaaa", file.getAbsolutePath());
+
+        mp.start();
     }
 
     /**
@@ -426,4 +419,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Intent intent = new Intent(this, RecordSoundActivity.class);
         startActivity(intent);
     }
+
+
+
 }

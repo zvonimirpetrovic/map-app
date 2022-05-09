@@ -23,8 +23,6 @@ import com.google.maps.android.PolyUtil;
 import com.maps.appmap.databinding.ActivityMapsUserBinding;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +37,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
     private Polyline polylineToLoad;
     private PolylineOptions mPolylineOptions;
     private byte[] audioFile = null;
+    private String pointsOnTheMapString;
 
     // MediaPlayer
     private MediaPlayer mp = null;
@@ -93,7 +92,11 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             @Override
             public void onPolylineClick(Polyline polyline)
             {
-                audioFile = DatabaseHelper.getAudioFromDb(context, polyline);
+                // Get LatLng points from clicked polyline
+                List<LatLng> pointsOnTheMap = polyline.getPoints();
+
+                // Encode retrieved points to string
+                pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
 
                 // Enable button for playing audio
                 findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
@@ -105,7 +108,12 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             public void onClick(View v) {
 
                 // Play audio
-                playAudioFromDb(audioFile);
+                // Get audio for a route based on encoded route field
+                String audioPath = DatabaseHelper.getAudioPathForSelectedRoute(context, pointsOnTheMapString);
+
+                // Play audio
+                playAudioFromDb(audioPath);
+
                 findViewById(R.id.btnPlay).setVisibility(View.GONE);
                 findViewById(R.id.btnStopPlay).setVisibility(View.VISIBLE);
             }
@@ -150,38 +158,6 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
     }
 
     /**
-     * Method for playing saved audio
-     *
-     */
-    private void playAudioFromDb(byte[] audio){
-        File file = null;
-        FileOutputStream fos;
-
-        try {
-            // Check Permissions
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                // Request permission
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{(Manifest.permission.WRITE_EXTERNAL_STORAGE)},
-                        0 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
-                );
-
-            file = File.createTempFile("sound", ".3gp");
-            fos = new FileOutputStream(file);
-            fos.write(audio);
-            fos.close();
-        } catch (
-                IOException e) {
-            e.printStackTrace();
-        }
-        mp = MediaPlayer.create(this, Uri.fromFile(file));
-        mp.start();
-    }
-
-    /**
      * Method for pausing audio
      *
      */
@@ -189,5 +165,28 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         mp.reset();
         mp.release();
         mp = null;
+    }
+
+    /**
+     * Method for playing saved audio
+     *
+     */
+    private void playAudioFromDb(String audioPath) {
+        File file = new File(audioPath);
+
+        // Check Permissions
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            // Request permission
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{(Manifest.permission.WRITE_EXTERNAL_STORAGE)},
+                    0 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
+            );
+
+        mp = MediaPlayer.create(this, Uri.fromFile(file));
+
+        mp.start();
     }
 }

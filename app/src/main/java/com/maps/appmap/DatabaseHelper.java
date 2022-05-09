@@ -9,18 +9,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.maps.android.PolyUtil;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /* TODO: make whole CRUD
-        Handle database name, table names and field names dynamically*/
+        Handle database name, table names and field names dynamically
+        Find out which audio format suits best(currently 3gp)*/
 
 public class DatabaseHelper {
     /**
@@ -31,7 +26,7 @@ public class DatabaseHelper {
     public static void saveDataToDb(Context context, String save){
 
         SQLiteDatabase db = context.openOrCreateDatabase("LCF",MODE_PRIVATE,null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, AudioPath VARCHAR);");
         db.execSQL("INSERT INTO Routes VALUES(NULL, 'admin', '" + save + "', NULL);");
         db.close();
     }
@@ -55,7 +50,7 @@ public class DatabaseHelper {
     public static List<String> getAllRoutesFromDb(Context context) {
         List<String> list = new ArrayList<>();
         SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, AudioPath VARCHAR);");
 
         String selectQuery = "SELECT EncodedRoute from Routes;";
 
@@ -75,81 +70,37 @@ public class DatabaseHelper {
         return list;
     }
 
-    public static byte[] getAudioForSelectedRoute(Context context, String s){
-        byte[] byteAudio = null;
-
-        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-
-        String selectQuery = "SELECT Audio from Routes WHERE EncodedRoute = '" + s + "';";
-
-        Cursor cursor = db.rawQuery(selectQuery, null);
-        if (cursor.moveToFirst())
-            byteAudio = cursor.getBlob(0);
-
-        cursor.close();
-
-        return byteAudio;
-    }
-
     public static void deleteRoutesWithNoAudio(Context context) {
 
         SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, Audio BLOB);");
-        db.delete("Routes", "Audio IS NULL", null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, AudioPath VARCHAR);");
+        db.delete("Routes", "AudioPath IS NULL", null);
         db.close();
-    }
-
-    public static byte[] getAudioFromDb(Context context, Polyline polyline){
-        // Get LatLng points from clicked polyline
-        List<LatLng> pointsOnTheMap = polyline.getPoints();
-
-        // Encode retrieved points to string
-        String pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
-
-        // Get audio for a route based on encoded route field
-
-        return getAudioForSelectedRoute(context, pointsOnTheMapString);
     }
 
     // Method to save audio file to database
     public static void saveAudioToDb(Context context, Activity activity){
 
         SQLiteDatabase db;
-        byte[] byteAudio;
+        String audioPath;
+        int maxId = getLastRouteIdFromDb(context);
 
         db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        audioPath = context.getExternalCacheDir().getAbsolutePath() + "/AudioRecording" + getLastRouteIdFromDb(context) + ".3gp";
 
-        try
-        {
-            FileInputStream instream = new FileInputStream(context.getExternalCacheDir().getAbsolutePath() + "/AudioRecording.3gp");
-            BufferedInputStream bif = new BufferedInputStream(instream);
-            byteAudio = new byte[bif.available()];
+        ContentValues newAudioPath = new ContentValues();
+        newAudioPath.put("AudioPath", audioPath);
 
-            ContentValues newAudio = new ContentValues();
-            newAudio.put("Audio", byteAudio);
-            int maxId = getLastRouteIdFromDb(context);
-            long ret = db.update("Routes", newAudio, "RoutesID = " + maxId, null);
-            if(ret>0){
-                Toast.makeText(
-                        activity,
-                        "\r\n Audio was successfully added to database! \r\n",
-                        Toast.LENGTH_LONG).show();
-            }
-            else Toast.makeText(
-                    activity,
-                    "\r\n Error add audio failed! \r\n",
-                    Toast.LENGTH_LONG).show();
-        } catch (IOException e)
-        {
+        long ret = db.update("Routes", newAudioPath, "RoutesID = " + maxId, null);
+        if(ret>0){
             Toast.makeText(
                     activity,
-                    "\r\n!!! Error: " + e+"!!!\r\n",
+                    "\r\n Audio was successfully added to database! \r\n",
                     Toast.LENGTH_LONG).show();
-        }
-
+            }
         db.close();
     }
+
 
     public static int getLastRouteIdFromDb(Context context) {
         SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
@@ -166,5 +117,68 @@ public class DatabaseHelper {
 
         return maxRow;
     }
+
+    public static int getRouteIdForSelectedRoute(Context context, String s){
+        int routeId = 0;
+
+        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, AudioPath VARCHAR);");
+
+        String selectQuery = "SELECT RoutesId from Routes WHERE EncodedRoute = '" + s + "';";
+
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst())
+            routeId = cursor.getInt(0);
+
+        cursor.close();
+
+        return routeId;
+    }
+
+    public static String getAudioPathForSelectedRoute(Context context, String s){
+        String audioPath = null;
+
+        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, AudioPath VARCHAR);");
+
+        String selectQuery = "SELECT AudioPath from Routes WHERE EncodedRoute = '" + s + "';";
+
+        Cursor cursor = db.rawQuery(selectQuery, null);
+        if (cursor.moveToFirst())
+            audioPath = cursor.getString(0);
+
+        cursor.close();
+
+        return audioPath;
+    }
+//      TODO: deleting audio files with no route
+/*    public static String deleteAudioWithoutPath(Context context, String path){
+
+        SQLiteDatabase db = context.openOrCreateDatabase("LCF", MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Routes(RoutesID integer primary key autoincrement, Username VARCHAR NOT NULL, EncodedRoute VARCHAR NOT NULL, AudioPath VARCHAR);");
+
+        List<String> filesList = new ArrayList<String>();
+
+        File[] files = new File(path).listFiles();
+        //If this pathname does not denote a directory, then listFiles() returns null.
+
+        for (File file : files) {
+            if (file.isFile()) {
+                filesList.add(file.getName());
+            }
+        }
+
+        String selectQuery = "SELECT AudioPath from Routes WHERE EncodedRoute = '" + s + "';";
+
+        Cursor cursor = db.rawQuery(selectQuery, null);
+        if (cursor.moveToFirst())
+            audioPath = cursor.getString(0);
+
+        cursor.close();
+
+        return audioPath;
+    }*/
+
 }
 
