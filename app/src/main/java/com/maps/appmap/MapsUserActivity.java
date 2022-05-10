@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -90,7 +91,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             @Override
             public void onPolylineClick(Polyline polyline)
             {
-                resetAudio();
+                AudioHandler.resetAudio(MapsUserActivity.this, mp);
 
                 // Get LatLng points from clicked polyline
                 List<LatLng> pointsOnTheMap = polyline.getPoints();
@@ -106,7 +107,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(@NonNull LatLng latLng) {
-                resetAudio();
+                AudioHandler.resetAudio(MapsUserActivity.this, mp);
             }
         });
 
@@ -119,7 +120,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
                 String audioPath = DatabaseHelper.getAudioPathForSelectedRoute(context, pointsOnTheMapString);
 
                 // Play audio
-                playAudioFromDb(audioPath);
+                AudioHandler.playAudioFromDb(context, MapsUserActivity.this, mp, audioPath);
 
                 findViewById(R.id.btnPlay).setVisibility(View.GONE);
                 findViewById(R.id.btnStopPlay).setVisibility(View.VISIBLE);
@@ -131,7 +132,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             public void onClick(View v) {
 
                 // Pause audio
-                pauseAudioFromDb();
+                AudioHandler.pauseAudioFromDb(mp);
                 findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
                 findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
             }
@@ -162,54 +163,5 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             polylineToLoad.setPoints(pointsToLoad);
             polylineToLoad.setClickable(true);
         }
-    }
-
-    /**
-     * Method for pausing audio
-     *
-     */
-    private void pauseAudioFromDb(){
-
-        if(mp.isPlaying()) {
-            mp.pause();
-        }
-    }
-
-    /**
-     * Method for reseting audio and hiding pause button
-     *
-     */
-    private void resetAudio(){
-
-        if(mp != null) {
-            mp.reset();
-            mp.release();
-            mp = null;
-        }
-        findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
-        findViewById(R.id.btnPlay).setVisibility(View.GONE);
-    }
-
-    /**
-     * Method for playing saved audio
-     *
-     */
-    private void playAudioFromDb(String audioPath) {
-        File file = new File(audioPath);
-
-        // Check Permissions
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-            // Request permission
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{(Manifest.permission.WRITE_EXTERNAL_STORAGE)},
-                    0 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
-            );
-
-        mp = MediaPlayer.create(this, Uri.fromFile(file));
-
-        mp.start();
     }
 }

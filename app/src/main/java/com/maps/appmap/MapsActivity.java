@@ -246,7 +246,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         findViewById(R.id.buttonSave).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                resetAudio();
+                AudioHandler.resetAudio(MapsActivity.this, mp);
 
                 // Do only if there is something to save to db
                 if(pointsToSave == null){
@@ -286,7 +286,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String audioPath = DatabaseHelper.getAudioPathForSelectedRoute(context, pointsOnTheMapString);
 
                 // Play audio
-                playAudioFromDb(audioPath);
+                AudioHandler.playAudioFromDb(context, MapsActivity.this, mp, audioPath);
 
                 findViewById(R.id.btnPlay).setVisibility(View.GONE);
                 findViewById(R.id.btnStopPlay).setVisibility(View.VISIBLE);
@@ -298,7 +298,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick(View v) {
 
                 // Pause audio
-                pauseAudioFromDb();
+                AudioHandler.pauseAudioFromDb(mp);
                 findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
                 findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
             }
@@ -311,7 +311,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPolylineClick(Polyline polyline)
             {
-                resetAudio();
+                AudioHandler.resetAudio(MapsActivity.this, mp);
 
                 // Get LatLng points from clicked polyline
                 List<LatLng> pointsOnTheMap = polyline.getPoints();
@@ -355,7 +355,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         "Lat : " + point.latitude + " , "
                                 + "Long : " + point.longitude,
                         Toast.LENGTH_LONG).show();*/
-                resetAudio();
+                AudioHandler.resetAudio(MapsActivity.this, mp);
 
                 points.add(point);
                 pointsToSave = PolyUtil.encode(points);
@@ -415,32 +415,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Method for playing saved audio
-     *
-     */
-    private void playAudioFromDb(String audioPath) {
-        File file = new File(audioPath);
-
-        // Check Permissions
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-            // Request permission
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{(Manifest.permission.WRITE_EXTERNAL_STORAGE)},
-                    0 //REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
-            );
-
-
-        mp = MediaPlayer.create(this, Uri.fromFile(file));
-//         mp.setDataSource(file.getAbsolutePath());
-        Log.d("aaaaaaa", file.getAbsolutePath());
-
-        mp.start();
-    }
-
-    /**
      * Method for switching to RecordSoundActivity
      *
      */
@@ -449,31 +423,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Intent intent = new Intent(this, RecordSoundActivity.class);
         intent.putExtra("pointsToSave", s);
         startActivity(intent);
-    }
-
-    /**
-     * Method for pausing audio
-     *
-     */
-    private void pauseAudioFromDb(){
-
-        if(mp.isPlaying()) {
-            mp.pause();
-        }
-    }
-
-    /**
-     * Method for reseting audio and hiding pause button
-     *
-     */
-    private void resetAudio(){
-
-        if(mp != null) {
-            mp.reset();
-            mp.release();
-            mp = null;
-        }
-        findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
-        findViewById(R.id.btnPlay).setVisibility(View.GONE);
     }
 }
