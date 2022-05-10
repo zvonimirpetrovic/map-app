@@ -60,6 +60,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<String> savedRoutes = null;
     private Polyline polylineToLoad;
 
+    String pointsOnTheMapString;
+
     private static MediaPlayer mp = new MediaPlayer();
 
     @Override
@@ -75,9 +77,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        // Disable button for stopping drawing
+        // Disable buttons for stopping and saving drawing
         findViewById(R.id.buttonEndDraw).setVisibility(View.GONE);
         findViewById(R.id.buttonSave).setVisibility(View.GONE);
+
+        // Disable buttons for playing and stopping audio
+        findViewById(R.id.btnPlay).setVisibility(View.GONE);
+        findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
 
         mMapShelterView = findViewById(R.id.drawer_view);
         mGestureDetector = new GestureDetector(this, new GestureListener());
@@ -240,6 +246,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         findViewById(R.id.buttonSave).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
+                resetAudio();
+
                 // Do only if there is something to save to db
                 if(pointsToSave == null){
 
@@ -269,23 +277,51 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        // ClickListener for btnPlay
+        findViewById(R.id.btnPlay).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                // Play audio
+                // Get audio for a route based on encoded route field
+                String audioPath = DatabaseHelper.getAudioPathForSelectedRoute(context, pointsOnTheMapString);
+
+                // Play audio
+                playAudioFromDb(audioPath);
+
+                findViewById(R.id.btnPlay).setVisibility(View.GONE);
+                findViewById(R.id.btnStopPlay).setVisibility(View.VISIBLE);
+            }
+        });
+
+        // ClickListener for btnStopPlay
+        findViewById(R.id.btnStopPlay).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                // Pause audio
+                pauseAudioFromDb();
+                findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
+                findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
+            }
+        });
+
+
         // ClickListener for playing audio when polyline is clicked
         mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener()
         {
             @Override
             public void onPolylineClick(Polyline polyline)
             {
+                resetAudio();
+
                 // Get LatLng points from clicked polyline
                 List<LatLng> pointsOnTheMap = polyline.getPoints();
 
                 // Encode retrieved points to string
-                String pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
+                pointsOnTheMapString = PolyUtil.encode(pointsOnTheMap);
 
-                // Get audio for a route based on encoded route field
-                String audioPath = DatabaseHelper.getAudioPathForSelectedRoute(context, pointsOnTheMapString);
+                // Play button show
+                findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
 
-                // Play audio
-                playAudioFromDb(audioPath);
             }
         });
     }
@@ -319,6 +355,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         "Lat : " + point.latitude + " , "
                                 + "Long : " + point.longitude,
                         Toast.LENGTH_LONG).show();*/
+                resetAudio();
 
                 points.add(point);
                 pointsToSave = PolyUtil.encode(points);
@@ -412,5 +449,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Intent intent = new Intent(this, RecordSoundActivity.class);
         intent.putExtra("pointsToSave", s);
         startActivity(intent);
+    }
+
+    /**
+     * Method for pausing audio
+     *
+     */
+    private void pauseAudioFromDb(){
+
+        if(mp.isPlaying()) {
+            mp.pause();
+        }
+    }
+
+    /**
+     * Method for reseting audio and hiding pause button
+     *
+     */
+    private void resetAudio(){
+
+        if(mp != null) {
+            mp.reset();
+            mp.release();
+            mp = null;
+        }
+        findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
+        findViewById(R.id.btnPlay).setVisibility(View.GONE);
     }
 }

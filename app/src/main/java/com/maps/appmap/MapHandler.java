@@ -15,6 +15,7 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
@@ -65,8 +66,8 @@ public class MapHandler {
                 double longitude = location.getLongitude();
                 double latitude = location.getLatitude();
                 LatLng startLatLng = new LatLng(latitude, longitude);
-                map.moveCamera(CameraUpdateFactory.newLatLng(startLatLng));
-                map.animateCamera(CameraUpdateFactory.zoomTo(12));
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(startLatLng, 18);
+                map.animateCamera(cameraUpdate);
                 map.getUiSettings().setZoomControlsEnabled(true);
                 map.getUiSettings().setMyLocationButtonEnabled(true);
             }
