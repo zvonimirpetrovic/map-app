@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
@@ -89,6 +90,8 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
             @Override
             public void onPolylineClick(Polyline polyline)
             {
+                resetAudio();
+
                 // Get LatLng points from clicked polyline
                 List<LatLng> pointsOnTheMap = polyline.getPoints();
 
@@ -97,6 +100,13 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
 
                 // Enable button for playing audio
                 findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
+            }
+        });
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(@NonNull LatLng latLng) {
+                resetAudio();
             }
         });
 
@@ -123,7 +133,7 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
                 // Pause audio
                 pauseAudioFromDb();
                 findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
-                findViewById(R.id.btnPlay).setVisibility(View.GONE);
+                findViewById(R.id.btnPlay).setVisibility(View.VISIBLE);
             }
         });
     }
@@ -159,9 +169,25 @@ public class MapsUserActivity extends FragmentActivity implements OnMapReadyCall
      *
      */
     private void pauseAudioFromDb(){
-        mp.reset();
-        mp.release();
-        mp = null;
+
+        if(mp.isPlaying()) {
+            mp.pause();
+        }
+    }
+
+    /**
+     * Method for reseting audio and hiding pause button
+     *
+     */
+    private void resetAudio(){
+
+        if(mp != null) {
+            mp.reset();
+            mp.release();
+            mp = null;
+        }
+        findViewById(R.id.btnStopPlay).setVisibility(View.GONE);
+        findViewById(R.id.btnPlay).setVisibility(View.GONE);
     }
 
     /**
